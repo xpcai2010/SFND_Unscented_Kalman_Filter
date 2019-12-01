@@ -74,3 +74,73 @@ and performing clustering. This is similar to what was done in Sensor Fusion Lid
 This information is only accessible by people who are already enrolled in Sensor Fusion. 
 If you are enrolled, see the project page in the classroom
 for instructions and the project rubric.
+
+## Writeup - Final Report
+##  Compiling and Testing
+_The submission must compile._
+
+The screen shot below shows the project code is compiled without errors using cmake and make.   
+   
+<img src="media/compile.png" />
+
+##  Code Efficiency
+_The methods in the code should avoid unnecessary calculations._
+
+ My code doesn't sacrifice comprehension, stability, or robustness for speed. I also maintained good and efficient coding practices when writing UKF functions.
+
+ ##  Accuracy
+_px, py, vx, vy output coordinates must have an RMSE <= [0.30, 0.16, 0.95, 0.70] after running for longer than 1 second._  
+
+Below GIF file is my final project output based on data provided by the code. As you can see, it passes the RMSE accuracy requirement. 
+
+<img src="media/finalResult.gif" width="1200" height="500" />
+
+### Evaluation of UKF Estimated Positions
+I've made a comparison among ground truth positions, Lidar measured position and UKF estimated positions for 3 traffic cars to evaluate my UKF implemented algorith and code. As you can see, the graph below demonstrates the result from implemented UKF code. 
+
+<img src="media/positionCompare.png" width="1200" height="600" />
+
+### Evaluation of UKF Estimated Velocity
+The graph below shows a comparison between ground truth velocity and UKF estimated velocity for 3 traffic cars.
+
+<img src="media/velocityCompare.png" width="1200" height="600" />
+
+### Evaluation of UKF Estimated Yaw Rate
+The graph below also shows a comparison between ground truth yaw rate and UKF estimated yaw rate for 3 traffic cars.
+<img src="media/yawrateCompare.png" width="1200" height="600" />
+
+
+### NIS - Normalized Innovation Squared
+
+The NIS definition from the course is illustrated below.
+<img src="media/NIS_definition.png" width="1200" height="600" />
+
+The final NIS evaluation for Lidar and Radar measurement noise covariance from the code is shown as below
+
+<img src="media/NIS.png" width="1200" height="600" />
+
+##  Follows the Correct Algorithm
+My UKF algorithm follows the general processing flow as taught in the preceding lessons. You can find how I implenmented it in `ukf.cpp`
+
+## Other Discussion
+
+I believe the code provided by Udacity has errors in regarding the radar sense measurement in function of _`rmarker Tools::radarSense(Car& car, Car ego, pcl::visualization::PCLVisualizer::Ptr& viewer, long long timestamp, bool visualize)`_ from `tools.cpp`
+
+The radar measurement - rho, phi and rho_dot are relative measurements to the ego car. We need to convert them in global coordinates when we pass them to `ukf.ProcessMeasurement(meas_package)`. Below is what I added in the `Tools::radarSense` function. 
+
+	//XC: convert from relative coordinates to absolute coordiates
+	double x = ego.position.x+marker.rho*cos(marker.phi);
+	double y = ego.position.y+marker.rho*sin(marker.phi);
+	double vx = ego.velocity * cos(ego.angle) + marker.rho_dot * cos(marker.phi);
+	double vy = ego.velocity * sin(ego.angle) + marker.rho_dot * sin(marker.phi);
+	marker.rho = sqrt(x*x + y*y);
+	marker.phi = atan2(y, x);
+	marker.rho_dot = (x*vx + y*vy)/marker.rho;
+	// conversion end
+
+Another error is rho_dot definition in the Udacity's provided code. It should be relative to the ego car. I corrected it.
+
+	// double rho_dot = (car.velocity*cos(car.angle)*rho*cos(phi) + car.velocity*sin(car.angle)*rho*sin(phi))/rho;
+	// XC: I believe the above rho_dot from udacity is incorrect. rho_dot should be relative to the ego car as rho and phi do.
+	double rho_dot = ((car.velocity*cos(car.angle) - ego.velocity*cos(ego.angle))*rho*cos(phi) + (car.velocity*sin(car.angle) - ego.velocity*sin(ego.angle))*rho*sin(phi))/rho;
+
