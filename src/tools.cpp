@@ -40,7 +40,10 @@ rmarker Tools::radarSense(Car& car, Car ego, pcl::visualization::PCLVisualizer::
 {
 	double rho = sqrt((car.position.x-ego.position.x)*(car.position.x-ego.position.x)+(car.position.y-ego.position.y)*(car.position.y-ego.position.y));
 	double phi = atan2(car.position.y-ego.position.y,car.position.x-ego.position.x);
-	double rho_dot = (car.velocity*cos(car.angle)*rho*cos(phi) + car.velocity*sin(car.angle)*rho*sin(phi))/rho;
+	
+	// double rho_dot = (car.velocity*cos(car.angle)*rho*cos(phi) + car.velocity*sin(car.angle)*rho*sin(phi))/rho;
+	// XC: I believe the above rho_dot from udacity is incorrect. rho_dot should be relative to the ego car as rho and phi do.
+	double rho_dot = ((car.velocity*cos(car.angle) - ego.velocity*cos(ego.angle))*rho*cos(phi) + (car.velocity*sin(car.angle) - ego.velocity*sin(ego.angle))*rho*sin(phi))/rho;
 
 	rmarker marker = rmarker(rho+noise(0.3,timestamp+2), phi+noise(0.03,timestamp+3), rho_dot+noise(0.3,timestamp+4));
 	if(visualize)
@@ -52,6 +55,17 @@ rmarker Tools::radarSense(Car& car, Car ego, pcl::visualization::PCLVisualizer::
 	MeasurementPackage meas_package;
 	meas_package.sensor_type_ = MeasurementPackage::RADAR;
     meas_package.raw_measurements_ = VectorXd(3);
+
+	//XC: convert from relative coordinates to absolute coordiates
+	double x = ego.position.x+marker.rho*cos(marker.phi);
+	double y = ego.position.y+marker.rho*sin(marker.phi);
+	double vx = ego.velocity * cos(ego.angle) + marker.rho_dot * cos(marker.phi);
+	double vy = ego.velocity * sin(ego.angle) + marker.rho_dot * sin(marker.phi);
+	marker.rho = sqrt(x*x + y*y);
+	marker.phi = atan2(y, x);
+	marker.rho_dot = (x*vx + y*vy)/marker.rho;
+	// conversion end
+
     meas_package.raw_measurements_ << marker.rho, marker.phi, marker.rho_dot;
     meas_package.timestamp_ = timestamp;
 

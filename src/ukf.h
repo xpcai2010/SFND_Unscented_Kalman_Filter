@@ -15,6 +15,12 @@ class UKF {
    * Destructor
    */
   virtual ~UKF();
+  
+
+  /**
+   * Init Initializes Unscented Kalman filter
+  */
+  void Init(MeasurementPackage meas_package);
 
   /**
    * ProcessMeasurement
@@ -41,7 +47,6 @@ class UKF {
    */
   void UpdateRadar(MeasurementPackage meas_package);
 
-
   // initially set to false, set to true in first call of ProcessMeasurement
   bool is_initialized_;
 
@@ -61,7 +66,8 @@ class UKF {
   Eigen::MatrixXd Xsig_pred_;
 
   // time when the state is true, in us
-  long long time_us_;
+  // long long time_us_;
+  long long previous_timestamp_;
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   double std_a_;
@@ -95,6 +101,15 @@ class UKF {
 
   // Sigma point spreading parameter
   double lambda_;
+
+ 	Eigen::MatrixXd R_lidar_;
+	Eigen::MatrixXd R_radar_;
+  
+  // NIS (normalized innovation squared) for radar 
+  double NIS_radar_;
+
+  // NIS (normalized innovation squared) for lidar 
+  double NIS_lidar_;
 };
 
 #endif  // UKF_H
